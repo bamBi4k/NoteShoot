@@ -12,30 +12,13 @@ No account. No cloud. No clutter. Just notes.
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.9.24-7F52FF.svg?logo=kotlin&logoColor=white)](https://kotlinlang.org)
 
 </div>
-
----
-
-## Screenshots
-
 <div align="center">
-
 <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/4.png" width="720" alt="Theme picker" />
 
 </div>
 
-<div align="center">
 
-| Notes | Editor | Themes |
-|:---:|:---:|:---:|
-| <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/1.jpg" width="220" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/2.jpg" width="220" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/3.jpg" width="220" /> |
 
-| Widget |
-|:---:|
-| <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/5.jpg" width="220" /> |
-
-</div>
-
----
 
 ## About
 
