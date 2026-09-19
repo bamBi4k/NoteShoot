@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Default (non-VGUI) button background.
+    Flat translucent black so the ☰ is visible over any note bitmap
+    without stealing focus from the content.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#33000000" />
+</shape>

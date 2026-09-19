@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    VGUI OUTSET button background.
+
+    Painted with three stacked layers (bottom-to-top in file order):
+      1. LIGHT fill covering the whole button
+      2. DARK rectangle inset 1dp from top + left  -> light peeks through at TOP and LEFT
+      3. FILL rectangle inset 1dp from all sides   -> dark peeks through at BOTTOM and RIGHT
+
+    Result: 1px light frame on top+left, 1px dark frame on bottom+right.
+    This is the classic Half-Life VGUI "raised" button look.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Layer 1: LIGHT — fills entire button -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#8C9284" />
+        </shape>
+    </item>
+
+    <!-- Layer 2: DARK — inset 1dp from top and left -->
+    <item
+        android:top="1dp"
+        android:left="1dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#292C21" />
+        </shape>
+    </item>
+
+    <!-- Layer 3: FILL — inset 1dp from all sides -->
+    <item
+        android:top="1dp"
+        android:left="1dp"
+        android:right="1dp"
+        android:bottom="1dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#4A5942" />
+        </shape>
+    </item>
+
+</layer-list>
