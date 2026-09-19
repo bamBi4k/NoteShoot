@@ -67,7 +67,7 @@ fun EditorScreen(
                 actions = {
                     if (isEditing) {
                         IconButton(onClick = {
-                            NotesStore.deleteNote(existing!!.id)
+                            NotesStore.moveToTrash(existing!!.id)
                             onNavigateBack()
                         }) {
                             Icon(Icons.Default.Delete, contentDescription = "Delete", tint = theme.consoleError)

@@ -5,9 +5,11 @@ import android.content.Intent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import org.json.JSONArray
 import org.json.JSONObject
+import kotlinx.coroutines.launch
 
 object NotesStore {
 
@@ -17,10 +19,41 @@ object NotesStore {
 
     private lateinit var appContext: Context
 
-    private val _notes = MutableStateFlow<List<Note>>(emptyList())
-    val notes: StateFlow<List<Note>> = _notes.asStateFlow()
+    /** All notes, including trashed ones. */
+    private val _allNotes = MutableStateFlow<List<Note>>(emptyList())
 
-    /** Call this once from Application.onCreate or MainActivity.onCreate */
+    /** Active notes only (not trashed), sorted: pinned first, then most recent. */
+    val notes: StateFlow<List<Note>> = _allNotes
+        .map { list ->
+            list.filter { !it.isTrashed }
+                .sortedWith(
+                    compareByDescending<Note> { it.pinned }
+                        .thenByDescending { it.timestamp }
+                )
+        }
+        .let { flow ->
+            // Wrap the flow so it's stable across recompositions
+            val backing = MutableStateFlow<List<Note>>(emptyList())
+            kotlinx.coroutines.MainScope().launch {
+                flow.collect { backing.value = it }
+            }
+            backing.asStateFlow()
+        }
+
+    /** Trashed notes only, most recently deleted first. */
+    val trashedNotes: StateFlow<List<Note>> = _allNotes
+        .map { list ->
+            list.filter { it.isTrashed }
+                .sortedByDescending { it.deletedAt ?: 0L }
+        }
+        .let { flow ->
+            val backing = MutableStateFlow<List<Note>>(emptyList())
+            kotlinx.coroutines.MainScope().launch {
+                flow.collect { backing.value = it }
+            }
+            backing.asStateFlow()
+        }
+
     fun init(context: Context) {
         if (::appContext.isInitialized) return
         appContext = context.applicationContext
@@ -34,8 +67,7 @@ object NotesStore {
         val initialized = prefs.getBoolean(KEY_INITIALIZED, false)
 
         if (!initialized) {
-            // First launch — seed with a welcome note
-            _notes.value = listOf(
+            _allNotes.value = listOf(
                 Note(title = "Welcome", content = "This is your first note. Tap to edit.")
             )
             saveToDisk()
@@ -44,12 +76,12 @@ object NotesStore {
         }
 
         val json = prefs.getString(KEY_NOTES, null) ?: "[]"
-        _notes.value = parseJson(json)
+        _allNotes.value = parseJson(json)
     }
 
     private fun saveToDisk() {
         if (!::appContext.isInitialized) return
-        val json = serializeJson(_notes.value)
+        val json = serializeJson(_allNotes.value)
         appContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit()
             .putString(KEY_NOTES, json)
@@ -64,6 +96,8 @@ object NotesStore {
             obj.put("title", n.title)
             obj.put("content", n.content)
             obj.put("timestamp", n.timestamp)
+            obj.put("pinned", n.pinned)
+            n.deletedAt?.let { obj.put("deletedAt", it) }
             arr.put(obj)
         }
         return arr.toString()
@@ -78,7 +112,9 @@ object NotesStore {
                     id = obj.getString("id"),
                     title = obj.optString("title", ""),
                     content = obj.optString("content", ""),
-                    timestamp = obj.optLong("timestamp", System.currentTimeMillis())
+                    timestamp = obj.optLong("timestamp", System.currentTimeMillis()),
+                    pinned = obj.optBoolean("pinned", false),
+                    deletedAt = if (obj.has("deletedAt")) obj.optLong("deletedAt") else null
                 )
             }
         } catch (e: Exception) {
@@ -90,13 +126,13 @@ object NotesStore {
 
     fun addNote(title: String, content: String): Note {
         val newNote = Note(title = title, content = content)
-        _notes.update { current -> current + newNote }
+        _allNotes.update { current -> current + newNote }
         afterChange()
         return newNote
     }
 
     fun updateNote(id: String, title: String, content: String) {
-        _notes.update { current ->
+        _allNotes.update { current ->
             current.map { n ->
                 if (n.id == id) n.copy(
                     title = title,
@@ -108,12 +144,67 @@ object NotesStore {
         afterChange()
     }
 
-    fun deleteNote(id: String) {
-        _notes.update { current -> current.filterNot { it.id == id } }
+    fun togglePin(id: String) {
+        _allNotes.update { current ->
+            current.map { n ->
+                if (n.id == id) n.copy(pinned = !n.pinned) else n
+            }
+        }
         afterChange()
     }
 
-    fun getNote(id: String): Note? = _notes.value.find { it.id == id }
+    /** Soft delete: moves to trash. */
+    fun moveToTrash(ids: Collection<String>) {
+        val now = System.currentTimeMillis()
+        val idSet = ids.toSet()
+        _allNotes.update { current ->
+            current.map { n ->
+                if (n.id in idSet && !n.isTrashed) n.copy(deletedAt = now, pinned = false)
+                else n
+            }
+        }
+        afterChange()
+    }
+
+    /** Convenience for single delete. */
+    fun moveToTrash(id: String) = moveToTrash(listOf(id))
+
+    /** Restore from trash. */
+    fun restoreFromTrash(ids: Collection<String>) {
+        val idSet = ids.toSet()
+        _allNotes.update { current ->
+            current.map { n ->
+                if (n.id in idSet && n.isTrashed) n.copy(deletedAt = null)
+                else n
+            }
+        }
+        afterChange()
+    }
+
+    fun restoreFromTrash(id: String) = restoreFromTrash(listOf(id))
+
+    /** Permanently remove specific notes (used by trash screen). */
+    fun purge(ids: Collection<String>) {
+        val idSet = ids.toSet()
+        _allNotes.update { current -> current.filterNot { it.id in idSet } }
+        afterChange()
+    }
+
+    fun purge(id: String) = purge(listOf(id))
+
+    /** Permanently remove every trashed note. */
+    fun emptyTrash() {
+        _allNotes.update { current -> current.filterNot { it.isTrashed } }
+        afterChange()
+    }
+
+    fun getNote(id: String): Note? = _allNotes.value.find { it.id == id }
+
+    /** Case-insensitive search across active notes. */
+    fun search(query: String): List<Note> {
+        if (query.isBlank()) return notes.value
+        return notes.value.filter { it.matches(query) }
+    }
 
     // ---------- Widget Sync ----------
 

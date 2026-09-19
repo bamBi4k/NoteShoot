@@ -5,20 +5,19 @@
     android:layout_height="match_parent"
     android:background="#1A1A1A">
 
-    <!-- Bitmap-rendered note content -->
-    <ImageView
-        android:id="@+id/widget_image"
+    <ListView
+        android:id="@+id/widget_list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:scaleType="fitXY"
-        android:contentDescription="Note" />
+        android:divider="@android:color/transparent"
+        android:dividerHeight="0dp"
+        android:scrollbars="vertical"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:clipToPadding="false" />
 
-    <!--
-        ☰ menu button.
-        Sized at 32dp with an 8dp top+right margin so it clears the rounded
-        corners that modern launchers (Pixel, One UI, MIUI, HyperOS) apply
-        to widget hosts. Background is swapped at render time for VGUI bevel.
-    -->
     <TextView
         android:id="@+id/widget_menu_button"
         android:layout_width="32dp"

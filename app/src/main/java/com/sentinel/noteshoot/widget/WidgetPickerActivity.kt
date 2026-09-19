@@ -6,7 +6,6 @@ import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
-import android.view.Gravity
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -14,6 +13,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -39,7 +40,6 @@ import com.sentinel.noteshoot.NotesStoreConstants
 import com.sentinel.noteshoot.ui.theme.NoteShootTheme
 import com.sentinel.noteshoot.ui.theme.ThemeManager
 import com.sentinel.noteshoot.ui.theme.cornerShape
-
 
 class WidgetPickerActivity : ComponentActivity() {
 
@@ -57,15 +57,16 @@ class WidgetPickerActivity : ComponentActivity() {
         NotesStore.init(applicationContext)
         ThemeManager.init(applicationContext)
 
+        // Full-screen transparent window. The scrim inside Compose dismisses
+        // when the user taps anywhere outside the picker card.
         window.apply {
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
             setLayout(
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.WRAP_CONTENT
+                WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.MATCH_PARENT
             )
             addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-            attributes = attributes.apply { dimAmount = 0.55f }
-            setGravity(Gravity.TOP or Gravity.END)
+            attributes = attributes.apply { dimAmount = 0.45f }
         }
 
         setContent {
@@ -105,7 +106,7 @@ class WidgetPickerActivity : ComponentActivity() {
     }
 
     private fun deleteNote(note: Note) {
-        NotesStore.deleteNote(note.id)
+        NotesStore.moveToTrash(note.id)
     }
 }
 
@@ -130,75 +131,92 @@ private fun WidgetPickerContent(
         animationSpec = tween(180), label = "alpha"
     )
 
-    val shape = theme.cornerShape(14)
-
-    Surface(
+    // Full-screen scrim. Tap anywhere on it dismisses.
+    Box(
         modifier = Modifier
-            .padding(12.dp)
-            .widthIn(min = 260.dp, max = 320.dp)
-            .heightIn(max = 480.dp)
-            .scale(scale)
-            .alpha(alpha),
-        color = theme.bgSurface,
-        shape = shape,
-        tonalElevation = 12.dp
+            .fillMaxSize()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onDismiss
+            ),
+        contentAlignment = Alignment.TopEnd
     ) {
-        Column(modifier = Modifier.padding(vertical = 10.dp)) {
+        // Picker card. Its own clickable swallows taps so they don't bubble
+        // up to the scrim and dismiss the popup.
+        Surface(
+            modifier = Modifier
+                .padding(12.dp)
+                .widthIn(min = 260.dp, max = 320.dp)
+                .heightIn(max = 480.dp)
+                .scale(scale)
+                .alpha(alpha)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = { /* swallow */ }
+                ),
+            color = theme.bgSurface,
+            shape = theme.cornerShape(14),
+            tonalElevation = 12.dp
+        ) {
+            Column(modifier = Modifier.padding(vertical = 10.dp)) {
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "SWAP NOTE",
-                    fontWeight = FontWeight.SemiBold,
-                    letterSpacing = 1.2.sp,
-                    fontSize = 11.sp,
-                    fontFamily = FontFamily.Monospace,
-                    color = theme.fontsSecondary,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    text = "✕",
-                    fontSize = 16.sp,
-                    color = theme.fontsSecondary,
+                Row(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .clickable(onClick = onDismiss)
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                )
-            }
-
-            Spacer(Modifier.height(6.dp))
-            HorizontalDivider(color = theme.bevelBorder)
-
-            LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                item {
-                    PickerRow(
-                        note = null,
-                        displayTitle = "★ Latest note",
-                        displaySubtitle = "Auto — most recently edited",
-                        onPick = { onPick(null) },
-                        onEdit = null,
-                        onDelete = null
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "SWAP NOTE",
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 1.2.sp,
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.Monospace,
+                        color = theme.fontsSecondary,
+                        modifier = Modifier.weight(1f)
                     )
-                    HorizontalDivider(color = theme.bevelBorder)
+                    Text(
+                        text = "✕",
+                        fontSize = 16.sp,
+                        color = theme.fontsSecondary,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .clickable(onClick = onDismiss)
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
                 }
-                items(
-                    notes.sortedByDescending { it.timestamp },
-                    key = { it.id }
-                ) { note ->
-                    PickerRow(
-                        note = note,
-                        displayTitle = note.safeTitle(40),
-                        displaySubtitle = note.snippet(50),
-                        onPick = { onPick(note.id) },
-                        onEdit = { onEdit(note) },
-                        onDelete = { onDelete(note) }
-                    )
-                    HorizontalDivider(color = theme.bevelBorder)
+
+                Spacer(Modifier.height(6.dp))
+                HorizontalDivider(color = theme.bevelBorder)
+
+                LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                    item {
+                        PickerRow(
+                            note = null,
+                            displayTitle = "★ Latest note",
+                            displaySubtitle = "Auto — most recently edited",
+                            onPick = { onPick(null) },
+                            onEdit = null,
+                            onDelete = null
+                        )
+                        HorizontalDivider(color = theme.bevelBorder)
+                    }
+                    items(
+                        notes.sortedByDescending { it.timestamp },
+                        key = { it.id }
+                    ) { note ->
+                        PickerRow(
+                            note = note,
+                            displayTitle = note.safeTitle(40),
+                            displaySubtitle = note.snippet(50),
+                            onPick = { onPick(note.id) },
+                            onEdit = { onEdit(note) },
+                            onDelete = { onDelete(note) }
+                        )
+                        HorizontalDivider(color = theme.bevelBorder)
+                    }
                 }
             }
         }

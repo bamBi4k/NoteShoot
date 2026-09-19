@@ -14,6 +14,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 
+sealed class Screen {
+    object NotesList : Screen()
+    data class Editor(val noteId: String?) : Screen()
+    object Themes : Screen()
+    object About : Screen()
+    object Trash : Screen()
+}
+
 @Composable
 fun NotesApp(initialNoteId: String? = null) {
 
@@ -22,12 +30,6 @@ fun NotesApp(initialNoteId: String? = null) {
             if (initialNoteId != null) Screen.Editor(initialNoteId)
             else Screen.NotesList
         )
-    }
-
-    val activeTheme = com.sentinel.noteshoot.ui.theme.ThemeManager.active
-    androidx.compose.runtime.LaunchedEffect(activeTheme.id) {
-        // Optional: hook into a snackbar host here later
-        android.util.Log.d("ThemeChange", "Active: ${activeTheme.displayName}")
     }
 
     LaunchedEffect(initialNoteId) {
@@ -57,7 +59,8 @@ fun NotesApp(initialNoteId: String? = null) {
                 onNoteClick = { id -> currentScreen = Screen.Editor(id) },
                 onAddNoteClick = { currentScreen = Screen.Editor(null) },
                 onOpenThemes = { currentScreen = Screen.Themes },
-                onOpenAbout = { currentScreen = Screen.About }
+                onOpenAbout = { currentScreen = Screen.About },
+                onOpenTrash = { currentScreen = Screen.Trash }
             )
             is Screen.Editor -> EditorScreen(
                 noteId = screen.noteId,
@@ -69,11 +72,13 @@ fun NotesApp(initialNoteId: String? = null) {
             is Screen.About -> AboutScreen(
                 onNavigateBack = { currentScreen = Screen.NotesList }
             )
+            is Screen.Trash -> TrashScreen(
+                onNavigateBack = { currentScreen = Screen.NotesList }
+            )
         }
     }
 }
 
-/** Depth heuristic for transition direction. */
 private fun isForward(target: Screen, initial: Screen): Boolean = when {
     initial is Screen.NotesList && target !is Screen.NotesList -> true
     target is Screen.NotesList -> false
