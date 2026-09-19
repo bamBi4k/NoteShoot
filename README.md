@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="fastlane/metadata/android/en-US/images/icon.png" width="120" alt="NoteShoot icon" />
+<img src="fastlane/metadata/android/en-US/images/icon.png" width="110" alt="NoteShoot icon" />
 
 # NoteShoot
 
@@ -10,7 +10,6 @@ No account. No cloud. No clutter. Just notes.
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Platform](https://img.shields.io/badge/Platform-Android%208.0%2B-3DDC84.svg?logo=android&logoColor=white)](https://developer.android.com)
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.9.24-7F52FF.svg?logo=kotlin&logoColor=white)](https://kotlinlang.org)
-[![Compose](https://img.shields.io/badge/Jetpack%20Compose-2024.09-4285F4.svg?logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
 
 </div>
 
@@ -20,19 +19,15 @@ No account. No cloud. No clutter. Just notes.
 
 <div align="center">
 
+<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/4.png" width="720" alt="Theme picker" />
+
+</div>
+
+<div align="center">
+
 | Notes | Editor | Themes |
 |:---:|:---:|:---:|
 | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/1.jpg" width="220" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/2.jpg" width="220" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/3.jpg" width="220" /> |
-
-</div>
-
-<div align="center">
-
-<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/4.png" width="640" alt="Theme picker" />
-
-</div>
-
-<div align="center">
 
 | Widget |
 |:---:|
@@ -42,59 +37,45 @@ No account. No cloud. No clutter. Just notes.
 
 ---
 
-## What it does
+## About
 
-**NoteShoot** is a lightweight notes app with an integrated home-screen widget. Write, edit, and delete notes; pin any note to your launcher; swap between them from the widget itself — no need to open the app.
-
-* **Notes:** Create, edit, delete, and timestamp. Every change is saved to disk immediately.
-* **Home-Screen Widget:** Pin any note to your launcher. Tap the widget body to jump straight into the editor with the keyboard up. Tap ☰ for an inline note picker with edit and delete shortcuts.
-* **Full Emoji Support:** Emoji render correctly in the app and in the widget, even on launchers that normally strip emoji fonts from widgets (the widget is bitmap-rendered in-app for reliability).
-* **Themes:** Three built-in themes — Mono Dark, Mono Light, and a secret VGUI theme hidden behind an easter egg.
-* **Font Size Control:** Global text scale from 11 pt to 18 pt, adjustable by slider or manual input.
-* **Persistent:** Notes, theme, and font size survive app restarts. No cloud sync, no account, no data ever leaves your device.
-
----
-
-## How it works
-
-NoteShoot stores everything locally. There is no network code, no analytics, and no third-party SDKs.
-
-* **Persistence:** Notes are serialized to JSON and stored in the app's private `SharedPreferences`.
-* **Widget Rendering:** The home-screen widget renders each note into a `Bitmap` in the app's own process (where Android's full font stack, including emoji, is available) and pushes that bitmap into the widget's `ImageView` via `RemoteViews`. This bypasses the launcher's font restrictions and guarantees emoji render correctly on every device.
-* **Theming:** A `ThemeSpec` data class holds every color used by the UI. The active theme is stored in `ThemeManager` and read by every composable through a `MaterialTheme` wrapper and `ThemeSpec` extension functions.
-* **Widget Sync:** Any change to a note, the active theme, or the font size broadcasts `APPWIDGET_UPDATE` to the widget, which re-renders immediately.
-
----
+NoteShoot is a notes app that stays out of the way. Write a note, pin it to your home screen, done. No account, no cloud, no ads.
 
 ## Features
 
-| | |
-|---|---|
-| **Notes List** | Title, snippet, timestamp — sorted by most recent |
-| **Editor** | Auto-focus, keyboard-up, IME-next flow between fields |
-| **Widget** | Pin any note, swap from ☰ menu, tap to edit |
-| **Widget Picker** | Floating top-right menu with edit and delete shortcuts |
-| **Themes** | Mono Dark, Mono Light, and a secret VGUI theme |
-| **Theme Picker** | Visual swatches, active indicator, locked-theme hint |
-| **Font Size** | 11–18 pt, slider + manual pt input, live preview |
-| **About Screen** | License, credits, version, and a hidden easter egg |
-| **Easter Egg** | Tap "version 1.0" ten times to unlock VGUI |
+- Create, edit, and delete notes
+- Pin any note to your home screen with a widget
+- Swap notes from the widget menu
+- Full emoji support, including in the widget
+- Three themes: Mono Dark, Mono Light, and a hidden VGUI theme
+- Font size slider from 11 to 18 pt
+- Notes and settings are saved automatically
 
----
+## Widget
+
+The widget is bitmap rendered inside the app, not by the launcher. This means emoji work on every device, even on launchers that normally break them.
+
+Tap the widget to open the note in the editor. Tap the menu button to switch which note the widget shows.
+
+## Themes
+
+| Theme | Description |
+|---|---|
+| Mono Dark | Black background, light text |
+| Mono Light | White background, dark text |
+| <details><summary>???</summary>VGUI. Tap "version 1.0" ten times in the About screen to unlock it.</details> | Hidden |
 
 ## Install
 
 | Source | Status |
 |---|---|
-| **GitHub Releases** | [Download the latest APK](https://github.com/bamBi4k/NoteShoot/releases) |
-| **F-Droid** | Coming soon |
-| **Google Play** | Coming soon |
+| GitHub Releases | [Download APK](https://github.com/bamBi4k/NoteShoot/releases) |
+| F-Droid | Coming soon |
+| Google Play | Coming soon |
 
-Requires **Android 8.0 (API 26)** or newer.
+Needs Android 8.0 or newer.
 
----
-
-## Build from source
+## Build
 
 ```bash
 git clone https://github.com/bamBi4k/NoteShoot.git
